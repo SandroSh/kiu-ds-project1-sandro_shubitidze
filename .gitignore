@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Environments
+venv/
+.env
+.ipynb_checkpoints/
+
+# Data
+data/raw/*
+data/interim/*
+data/processed/*
+
+# Model outputs
+models/
+logs/
+
+# IDE
+.vscode/
+.idea/
