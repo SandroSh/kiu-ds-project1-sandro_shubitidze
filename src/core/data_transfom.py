@@ -4,17 +4,20 @@ from data import students
 
 
 def calculate_average(scores: list[int]) -> float:
+    """Calculate the arithmetic mean of a list of scores."""
     return sum(scores) / len(scores)
 
 
 def assign_grade(average: float) -> str:
-
+    """Convert a numerical average to letter grade based on SCORE_GRADES scale."""
     for grade, range in SCORE_GRADES.items():
         if average >= range[0] and average <= range[1]:
             return grade
 
 
 def check_eligibility(student: dict) -> tuple[bool, str]:
+    """Check if a student passes based on scores and attendance.
+    Returns (passed, reason) tuple where reason explains any failure."""
     student_average = calculate_average(student["scores"])
     student_attendance = calculate_attandance_percantage(student["attendance"])
     status = True if student_average >= 60 and student_attendance >= 75 else False
@@ -32,7 +35,8 @@ def check_eligibility(student: dict) -> tuple[bool, str]:
 def find_top_performers(
     students: dict[student_dict_T], n: int
 ) -> list[tuple[str, float]]:
-
+    """Find the top n performers based on average scores.
+    Returns list of (name, average) tuples."""
     performance_data = []
 
     for student_id, student_data in students.items():
@@ -44,6 +48,7 @@ def find_top_performers(
 
 
 def generate_report(students: dict[student_dict_T]) -> Report:
+    """Generate a comprehensive report with class statistics and student performance metrics."""
     total_students = len(students)
     passed_count = sum(
         1 for eligibility in calculate_total_eligibility(students) if eligibility[0]
@@ -72,12 +77,15 @@ def generate_report(students: dict[student_dict_T]) -> Report:
 
 
 def calculate_attandance_percantage(attandance: int, max_attandance=30) -> float:
+    """Calculate attendance percentage based on attended days and maximum possible days."""
     return attandance / max_attandance * 100
 
 
 def calculate_total_eligibility(
     students: dict[student_dict_T],
 ) -> list[tuple[bool, str]]:
+    """Check eligibility status for all students.
+    Returns list of (passed, reason) tuples."""
     total_eligibility = []
     for student_id, student_data in students.items():
         total_eligibility.append(check_eligibility(student_data))
@@ -85,6 +93,7 @@ def calculate_total_eligibility(
 
 
 def calculate_total_average(students: dict[student_dict_T]) -> float:
+    """Calculate the average score across all students in the class."""
     averages = []
 
     for student_id, student_data in students.items():
@@ -93,6 +102,8 @@ def calculate_total_average(students: dict[student_dict_T]) -> float:
 
 
 def find_minmax(students: dict[student_dict_T]) -> tuple[int, int]:
+    """Find highest and lowest scores across all students.
+    Returns (max_score, min_score) tuple."""
     flattened_scores = []
     min_n = 100
     max_n = 0
@@ -110,6 +121,8 @@ def find_minmax(students: dict[student_dict_T]) -> tuple[int, int]:
 
 
 def calculate_attendance_ratio(students: dict[student_dict_T]) -> list[float]:
+    """Calculate attendance ratios for all students.
+    Returns list of attendance percentages."""
     total_attendance_ratio = []
 
     for student_id, student_data in students.items():
@@ -121,12 +134,15 @@ def calculate_attendance_ratio(students: dict[student_dict_T]) -> list[float]:
 
 
 def round_two_decimals(x: float) -> float:
+    """Round a float to 2 decimal places."""
     return round(x, 2)
 
 
 def distribute_grades(
     students: dict[student_dict_T],
 ) -> dict[str, int]:
+    """Count number of students achieving each letter grade.
+    Returns dict mapping grades to counts."""
     distributed_grades = dict.fromkeys(SCORE_GRADES.keys(), 0)
 
     for student_id, student_data in students.items():
@@ -138,6 +154,8 @@ def distribute_grades(
 
 
 def filter_failed_students(students: dict[student_dict_T]) -> list[dict[str, tuple[bool,str]]]:
+    """Get list of students who failed with their failure reasons.
+    Returns list of dicts with id, name, and failure reason."""
     failed_students = []
 
     for student_id, student_data in students.items():
@@ -149,6 +167,7 @@ def filter_failed_students(students: dict[student_dict_T]) -> list[dict[str, tup
 
 
 def print_report(report: Report):
+    """Print formatted report showing class statistics, top performers, failures, and grade distribution."""
     PERFORMER_QUANTITY = 5
     students_data = report.students_data[0] if isinstance(report.students_data, tuple) else report.students_data
     top_5_performer_data = find_top_performers(students_data, PERFORMER_QUANTITY)
@@ -181,6 +200,7 @@ def print_report(report: Report):
 
 
 def main():
+    """Entry point: generate and print a report for all students."""
     report = generate_report(students)
     print_report(report)
 
