@@ -8,8 +8,6 @@
 - Code comments were enhanced using AI assistance
 - Sample student data was generated using AI
 - Readme was generated with AI assistance
-
-
 ## How to Run
 From the project root directory:
 
@@ -22,8 +20,6 @@ python -m src.core.numpy
 # Run third task 
 python -m src.core.analyzer
 ```
-
-
 ## Project Structure
 ```
 src/
