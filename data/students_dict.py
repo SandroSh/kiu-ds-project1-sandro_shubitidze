@@ -4,7 +4,7 @@ students: dict[student_dict_T] = {
     "S002": {"attendance": 11, "name": "Olivia", "scores": [81, 60, 99, 55, 91]},
     "S003": {"attendance": 3, "name": "Noah", "scores": [75, 93, 61, 85, 78]},
     "S004": {"attendance": 28, "name": "Emma", "scores": [53, 97, 59, 70, 82]},
-    "S005": {"attendance": 1, "name": "Oliver", "scores": [64, 84, 66, 79, 94]},
+    "S005": {"attendance": 1, "name": "Oliver", "scores": [100,100,100,100,95]},
     "S006": {"attendance": 19, "name": "Charlotte", "scores": [90, 52, 71, 83, 65]},
     "S007": {"attendance": 7, "name": "Elijah", "scores": [58, 98, 87, 62, 73]},
     "S008": {"attendance": 30, "name": "Amelia", "scores": [77, 63, 96, 54, 89]},

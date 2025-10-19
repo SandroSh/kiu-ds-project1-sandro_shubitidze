@@ -1,5 +1,5 @@
-from ..constants import score_grade
-from ..types import student_dict_T, SubjectStatus, report_dict_T, Report
+from ..constants import SCORE_GRADES
+from ..types import student_dict_T, SubjectStatus,  Report, FailingCase
 from data import students
 
 
@@ -9,21 +9,24 @@ def calculate_average(scores: list[int]) -> float:
 
 def assign_grade(average: float) -> str:
 
-    for grade, range in score_grade.items():
+    for grade, range in SCORE_GRADES.items():
         if average >= range[0] and average <= range[1]:
             return grade
 
 
-def check_eligibility(student_dict: student_dict_T) -> tuple[bool, str]:
+def check_eligibility(student: dict) -> tuple[bool, str]:
+    student_average = calculate_average(student["scores"])
+    student_attendance = calculate_attandance_percantage(student["attendance"])
+    status = True if student_average >= 60 and student_attendance >= 75 else False
+    if not status:
+        if student_average < 60 and student_attendance >= 75:
+           return (status, f'{FailingCase.LOW_AVERAGE.value} ({round_two_decimals(student_average)}%)')
+        elif student_average >= 60 and student_attendance < 75:
+            return (status, f'{FailingCase.LOW_ATTENDANCE.value} ({round_two_decimals(student_attendance)}%)')
+        else:
+            return (status, f'{FailingCase.LOW_AVERAGE.value}({round_two_decimals(student_average)}) , {FailingCase.LOW_ATTENDANCE.value} ({round_two_decimals(student_attendance)}%)')
 
-    status = (
-        True
-        if calculate_average(student_dict[1].scores) >= 60
-        and calculate_attandance_percantage(student_dict[1].attendance) >= 75
-        else False
-    )
-
-    return (status, SubjectStatus.PASS if status else SubjectStatus.FAIL)
+    return (status, SubjectStatus.PASS.value)
 
 
 def find_top_performers(
@@ -32,11 +35,11 @@ def find_top_performers(
 
     performance_data = []
 
-    for student in students:
-        performance_data.append((student[0], calculate_average(student[2].scores)))
+    for student_id, student_data in students.items():
+        avg = calculate_average(student_data["scores"])
+        performance_data.append((student_data["name"], avg))
 
-    performance_data.sort()
-
+    performance_data.sort(key=lambda x: x[1])
     return performance_data[-n:]
 
 
@@ -45,14 +48,20 @@ def generate_report(students: dict[student_dict_T]) -> Report:
     passed_count = sum(
         1 for eligibility in calculate_total_eligibility(students) if eligibility[0]
     )
+    passed_rate = passed_count / total_students * 100
     failed_count = total_students - passed_count
+    failed_rate = failed_count / total_students * 100
     class_average = calculate_total_average(students)
     highest_score, lowest_score = find_minmax(students)
-    average_attendance_rate = sum(calculate_attendance_ratio) / total_students
+    attendance_ratios = calculate_attendance_ratio(students)
+    average_attendance_rate = sum(attendance_ratios) / total_students
     report = Report(
+        students,
         total_students,
         passed_count,
+        passed_rate,
         failed_count,
+        failed_rate,
         class_average,
         highest_score,
         lowest_score,
@@ -70,16 +79,16 @@ def calculate_total_eligibility(
     students: dict[student_dict_T],
 ) -> list[tuple[bool, str]]:
     total_eligibility = []
-    for s in students:
-        total_eligibility.append(check_eligibility(s[1].scores))
+    for student_id, student_data in students.items():
+        total_eligibility.append(check_eligibility(student_data))
     return total_eligibility
 
 
 def calculate_total_average(students: dict[student_dict_T]) -> float:
     averages = []
 
-    for student in students:
-        averages.append(calculate_average(student[1].scores))
+    for student_id, student_data in students.items():
+        averages.append(calculate_average(student_data["scores"]))
     return sum(averages) / len(averages)
 
 
@@ -88,47 +97,92 @@ def find_minmax(students: dict[student_dict_T]) -> tuple[int, int]:
     min_n = 100
     max_n = 0
 
-    for s in students:
-        flattened_scores.extend(s[1].scores)
+    for student_id, student_data in students.items():
+        flattened_scores.extend(student_data["scores"])
 
     for n in flattened_scores:
         if n < min_n:
             min_n = n
-        elif n > max_n:
+        if n > max_n:
             max_n = n
 
-    return (min, max)
+    return (max_n, min_n)
 
 
 def calculate_attendance_ratio(students: dict[student_dict_T]) -> list[float]:
     total_attendance_ratio = []
 
-    for student in students:
+    for student_id, student_data in students.items():
         total_attendance_ratio.append(
-            calculate_attandance_percantage(student[1].attendance)
+            calculate_attandance_percantage(student_data["attendance"])
         )
 
     return total_attendance_ratio
 
+
 def round_two_decimals(x: float) -> float:
     return round(x, 2)
 
-def main():
-    report = generate_report(students)
+
+def distribute_grades(
+    students: dict[student_dict_T],
+) -> dict[str, int]:
+    distributed_grades = dict.fromkeys(SCORE_GRADES.keys(), 0)
+
+    for student_id, student_data in students.items():
+        s_grade = assign_grade(calculate_average(student_data["scores"]))
+        if s_grade is not None:
+            distributed_grades[s_grade] += 1
+
+    return distributed_grades
+
+
+def filter_failed_students(students: dict[student_dict_T]) -> list[dict[str, tuple[bool,str]]]:
+    failed_students = []
+
+    for student_id, student_data in students.items():
+        status = check_eligibility(student_data)
+        is_failed = not status[0]
+        if is_failed:
+            failed_students.append({"id": student_id, "name": student_data["name"], "reason": status[1]})
+    return failed_students
+
+
+def print_report(report: Report):
+    PERFORMER_QUANTITY = 5
+    students_data = report.students_data[0] if isinstance(report.students_data, tuple) else report.students_data
+    top_5_performer_data = find_top_performers(students_data, PERFORMER_QUANTITY)
+    grade_distribution_data = distribute_grades(students_data)
+    failed_students_data = filter_failed_students(students_data)
+    
     print("=== COURSE STATISTICS ===")
+
     print(f"Total Students: {report.total_students}")
-    print(f"Passed: {report.passed_count}")
-    print(f"Failed: {report.failed_count}")
+    print(f"Passed: {report.passed_count} ({round_two_decimals(report.passed_rate)}%)")
+    print(f"Failed: {report.failed_count} ({round_two_decimals(report.failed_rate)}%)")
     print(f"Class Average: {report.class_average}")
     print(f"Average Attendance Rate: {report.average_attendance_rate}%")
+
     print("\n")
     print("=== TOP 5 PERFORMERS ===")
-    print(f"")
-    print(f"\n")
+    for index, (student, score) in enumerate(top_5_performer_data, 1):
+        print(f"{index}. {student} - {score} ({assign_grade(score)})")
+
+    print("\n")
+
     print("=== STUDENTS WHO FAILED ===")
-    print(f"")
-    print(f"\n")
+    for student in failed_students_data:
+        print(f"{student['id']} - {student['name']}: {student['reason']}")
+    print("\n")
+
     print("=== GRADE DISTRIBUTION ===")
+    for grade in grade_distribution_data.items():
+        print(f"{grade[0]}: {grade[1]} students")
+
+
+def main():
+    report = generate_report(students)
+    print_report(report)
 
 
 if __name__ == "__main__":
